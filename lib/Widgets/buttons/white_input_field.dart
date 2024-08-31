@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 class WhiteInputField extends StatelessWidget {
   const WhiteInputField({
     super.key,
+    required this.controller,
+    this.obscureText = false,
   });
+
+  final TextEditingController controller;
+  final bool obscureText;
 
   BorderSide border(BuildContext context) =>
       BorderSide(color: Theme.of(context).colorScheme.secondary);
@@ -11,6 +16,8 @@ class WhiteInputField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
+      obscureText: obscureText,
       decoration: InputDecoration(
         filled: true, // Enables the filled background color
         fillColor: Colors.white, // Sets the fill color to white

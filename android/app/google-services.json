@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "31679741662",
+    "project_id": "bitbook-8ba1e",
+    "storage_bucket": "bitbook-8ba1e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:31679741662:android:606973cf201a66d4318c4f",
+        "android_client_info": {
+          "package_name": "com.infinity.bitbook"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "31679741662-ehl7dcvh6o30fframtr1q5k9it6hlkn3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.infinity.bitbook",
+            "certificate_hash": "6c06ffd6f6f9940b9f2385519168e3e20a3e0a52"
+          }
+        },
+        {
+          "client_id": "31679741662-0rfj74bl59n4dqnoudicvuuo56qqnsn1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAlI4X_KHLY-ZzdEc1cHSTidiFUNPZOxFI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "31679741662-0rfj74bl59n4dqnoudicvuuo56qqnsn1.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "31679741662-oc2vur2kuboqc09b8cp3oi61558vrbjj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bitBook"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
