@@ -227,12 +227,78 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label),
-          Text(
-            value.toString(),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+          Row(
+            children: [
+              Text(
+                value.toString(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              if (label != 'Total Classes') // Don't show edit for total
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 16),
+                  onPressed: () => _showEditDialog(context, label, value),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showEditDialog(
+      BuildContext context, String type, int currentValue) async {
+    final controller = TextEditingController(text: currentValue.toString());
+
+    return Get.dialog(
+      AlertDialog(
+        title: Text('Edit $type'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: type,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final newValue = int.tryParse(controller.text);
+              if (newValue != null && newValue >= 0) {
+                final attendance = attendanceController.attendance.value!;
+
+                int present = attendance.presentClasses;
+                int absent = attendance.absentClasses;
+                int leaves = attendance.leaveClasses;
+
+                switch (type) {
+                  case 'Present':
+                    present = newValue;
+                    break;
+                  case 'Absent':
+                    absent = newValue;
+                    break;
+                  case 'Leaves':
+                    leaves = newValue;
+                    break;
+                }
+
+                attendanceController.updateAttendanceCounts(
+                  present: present,
+                  absent: absent,
+                  leaves: leaves,
+                );
+                Get.back();
+              }
+            },
+            child: const Text('Save'),
           ),
         ],
       ),
@@ -243,62 +309,62 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
     TextEditingController reasonController = TextEditingController();
     DateTime selectedDate = DateTime.now();
 
-    return showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Mark $type'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ListTile(
-                title: const Text('Date'),
-                subtitle: Text(
-                  '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
-                ),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () async {
-                  final DateTime? picked = await showDatePicker(
-                    context: context,
-                    initialDate: selectedDate,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime.now(),
-                  );
-                  if (picked != null && picked != selectedDate) {
-                    selectedDate = picked;
-                    (context as Element).markNeedsBuild();
-                  }
-                },
+    return Get.dialog<String>(
+      AlertDialog(
+        title: Text('Mark $type'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              title: const Text('Date'),
+              subtitle: Text(
+                '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
               ),
-              const Divider(),
-              TextField(
-                controller: reasonController,
-                maxLength: 80,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Enter reason (optional)',
-                  counterText: '${reasonController.text.length}/80',
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, null),
-              child: const Text('Cancel'),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: () async {
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDate,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime.now(),
+                );
+                if (picked != null && picked != selectedDate) {
+                  selectedDate = picked;
+                  (context as Element).markNeedsBuild();
+                }
+              },
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(
-                context,
-                '${selectedDate.toIso8601String()}|${reasonController.text}',
+            const Divider(),
+            const SizedBox(
+              height: 4,
+            ),
+            TextField(
+              controller: reasonController,
+              maxLength: 80,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Enter reason (optional)',
+                counterText: '${reasonController.text.length}/80',
+                border: const OutlineInputBorder(),
               ),
-              child: const Text('Submit'),
             ),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(
+              result:
+                  '${selectedDate.toIso8601String()}|${reasonController.text}',
+            ),
+            child: const Text('Submit'),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -40,4 +40,20 @@ class AttendanceController extends GetxController {
     final listController = Get.find<AttendanceListController>();
     listController.updateAttendance(attendance.value!);
   }
+
+  void updateAttendanceCounts({
+    required int present,
+    required int absent,
+    required int leaves,
+  }) {
+    if (attendance.value == null) return;
+
+    attendance.value!.presentClasses = present;
+    attendance.value!.absentClasses = absent;
+    attendance.value!.leaveClasses = leaves;
+    attendance.refresh();
+
+    final listController = Get.find<AttendanceListController>();
+    listController.updateAttendance(attendance.value!);
+  }
 }
