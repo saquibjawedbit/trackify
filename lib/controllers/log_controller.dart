@@ -15,7 +15,7 @@ class LogController extends GetxController {
   }
 
   void deleteLog(String logId) {
-    _logs.removeWhere((log) => log.uid == logId);
+    _logs.removeWhere((log) => log.id == logId);
     _logs.refresh();
     _saveLogs();
   }

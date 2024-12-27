@@ -1,38 +1,42 @@
 enum AttendanceType { present, absent, leave }
 
 class LogModel {
-  final String? uid;
-  final DateTime date;
+  final String id; // Add this field
+  final String subjectId;
   final AttendanceType type;
   final String? reason;
-  final String subjectId;
+  final DateTime date;
 
   LogModel({
-    this.uid,
+    String? id, // Make it optional in constructor
     required this.subjectId,
     required this.type,
     this.reason,
     DateTime? date,
-  }) : date = date ?? DateTime.now();
+  })  : this.id = id ??
+            'log_${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}', // Generate if not provided
+        this.date = date ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
     return {
-      'date': date.toIso8601String(),
+      'id': id, // Add to JSON
+      'subjectId': subjectId,
       'type': type.toString(),
       'reason': reason,
-      'subjectId': subjectId,
+      'date': date.toIso8601String(),
     };
   }
 
   factory LogModel.fromMap(Map<String, dynamic> map) {
     return LogModel(
-      uid: map['uid'],
-      date: DateTime.parse(map['date']),
+      id: map['id'] ??
+          'log_${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}', // Add to factory constructor
+      subjectId: map['subjectId'] as String,
       type: AttendanceType.values.firstWhere(
         (e) => e.toString() == map['type'],
       ),
-      reason: map['reason'],
-      subjectId: map['subjectId'],
+      reason: map['reason'] as String?,
+      date: DateTime.parse(map['date'] as String),
     );
   }
 

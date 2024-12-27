@@ -21,6 +21,8 @@ class AttendanceDetailScreen extends StatefulWidget {
 
 class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
   final attendanceController = Get.put(AttendanceController());
+  final RxBool isSelectionMode = false.obs;
+  final RxSet<String> selectedLogs = <String>{}.obs;
 
   @override
   void initState() {
@@ -34,16 +36,36 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
       appBar: AppBar(
         title: Text(widget.attendanceModel.subject),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_month),
-            onPressed: () => Get.to(() => AttendanceCalendarScreen(
-                  controller: attendanceController,
+          Obx(() => isSelectionMode.value
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(
+                      onPressed: () => selectedLogs.clear(),
+                      child: const Text('Clear',
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                    TextButton(
+                      onPressed: _deleteSelectedLogs,
+                      child: const Text('Delete',
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.calendar_month),
+                      onPressed: () => Get.to(() => AttendanceCalendarScreen(
+                          controller: attendanceController)),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _showDeleteConfirmation(context),
+                    ),
+                  ],
                 )),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () => _showDeleteConfirmation(context),
-          ),
         ],
       ),
       body: Padding(
@@ -209,10 +231,53 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                       itemCount: attendanceController.history.length,
                       itemBuilder: (context, index) {
                         final log = attendanceController.history[index];
+                        final isSelected = selectedLogs.contains(log.id);
                         return ListTile(
+                          leading: isSelectionMode.value
+                              ? Checkbox(
+                                  value: isSelected,
+                                  onChanged: (bool? value) {
+                                    if (value == true) {
+                                      selectedLogs.add(log.id);
+                                    } else {
+                                      selectedLogs.remove(log.id);
+                                    }
+                                  },
+                                )
+                              : Icon(
+                                  log.type == AttendanceType.present
+                                      ? Icons.check_circle
+                                      : log.type == AttendanceType.absent
+                                          ? Icons.cancel
+                                          : Icons.calendar_today,
+                                  color: log.type == AttendanceType.present
+                                      ? Colors.green
+                                      : log.type == AttendanceType.absent
+                                          ? Colors.red
+                                          : Colors.yellow,
+                                ),
                           title: Text(log.reason ?? "No Reasons"),
                           subtitle: Text(log.getType()),
                           trailing: Text(log.date.toString().substring(0, 10)),
+                          onLongPress: () {
+                            if (!isSelectionMode.value) {
+                              isSelectionMode.value = true;
+                              selectedLogs.add(log.id);
+                            }
+                          },
+                          onTap: () {
+                            if (isSelectionMode.value) {
+                              if (isSelected) {
+                                selectedLogs.remove(log.id);
+                                if (selectedLogs.isEmpty) {
+                                  isSelectionMode.value = false;
+                                }
+                              } else {
+                                selectedLogs.add(log.id);
+                              }
+                            }
+                          },
+                          selected: isSelected,
                         );
                       },
                     ),
@@ -339,7 +404,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
 
   Future<String?> _showReasonDialog(BuildContext context, String type) async {
     TextEditingController reasonController = TextEditingController();
-    DateTime selectedDate = DateTime.now();
+    final selectedDate = DateTime.now().obs;
 
     return Get.dialog<String>(
       AlertDialog(
@@ -348,29 +413,26 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ListTile(
-              title: const Text('Date'),
-              subtitle: Text(
-                '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
-              ),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: () async {
-                final DateTime? picked = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate,
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime.now(),
-                );
-                if (picked != null && picked != selectedDate) {
-                  selectedDate = picked;
-                  (context as Element).markNeedsBuild();
-                }
-              },
-            ),
+            Obx(() => ListTile(
+                  title: const Text('Date'),
+                  subtitle: Text(
+                    '${selectedDate.value.day}/${selectedDate.value.month}/${selectedDate.value.year}',
+                  ),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate.value,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      selectedDate.value = picked;
+                    }
+                  },
+                )),
             const Divider(),
-            const SizedBox(
-              height: 4,
-            ),
+            const SizedBox(height: 4),
             TextField(
               controller: reasonController,
               maxLength: 80,
@@ -391,7 +453,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
           TextButton(
             onPressed: () => Get.back(
               result:
-                  '${selectedDate.toIso8601String()}|${reasonController.text}',
+                  '${selectedDate.value.toIso8601String()}|${reasonController.text}',
             ),
             child: const Text('Submit'),
           ),
@@ -420,6 +482,37 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
               Get.snackbar(
                 'Success',
                 'Subject deleted successfully',
+                backgroundColor: Colors.red,
+                colorText: Colors.white,
+              );
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteSelectedLogs() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Logs'),
+        content: Text(
+            'Are you sure you want to delete ${selectedLogs.length} logs?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              attendanceController.deleteLogs(selectedLogs.toList());
+              selectedLogs.clear();
+              isSelectionMode.value = false;
+              Get.back();
+              Get.snackbar(
+                'Success',
+                'Logs deleted successfully',
                 backgroundColor: Colors.red,
                 colorText: Colors.white,
               );

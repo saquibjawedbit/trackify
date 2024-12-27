@@ -32,7 +32,6 @@ class AttendanceController extends GetxController {
       type: type,
       reason: reason.isEmpty ? null : reason,
       date: date,
-      uid: 'log_${DateTime.now().millisecondsSinceEpoch}',
     );
 
     logController.addLog(log);
@@ -69,5 +68,56 @@ class AttendanceController extends GetxController {
 
     final listController = Get.find<AttendanceListController>();
     listController.updateAttendance(attendance.value!);
+  }
+
+  void deleteLogs(List<String> logIds) {
+    history.removeWhere((log) {
+      if (logIds.contains(log.id)) {
+        print("Found");
+        return true;
+      }
+
+      return false;
+    });
+    for (var id in logIds) {
+      logController.deleteLog(id);
+    } // Use forEach instead of map
+    _updateAttendanceCounts();
+    saveAttendance();
+  }
+
+  void _updateAttendanceCounts() {
+    if (attendance.value == null) return;
+
+    int present = 0;
+    int absent = 0;
+    int leaves = 0;
+
+    for (var log in history) {
+      switch (log.type) {
+        case AttendanceType.present:
+          present++;
+          break;
+        case AttendanceType.absent:
+          absent++;
+          break;
+        case AttendanceType.leave:
+          leaves++;
+          break;
+      }
+    }
+
+    updateAttendanceCounts(
+      present: present,
+      absent: absent,
+      leaves: leaves,
+    );
+  }
+
+  void saveAttendance() {
+    if (attendance.value != null) {
+      final listController = Get.find<AttendanceListController>();
+      listController.updateAttendance(attendance.value!);
+    }
   }
 }
