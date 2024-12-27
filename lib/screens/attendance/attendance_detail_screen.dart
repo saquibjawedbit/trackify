@@ -103,7 +103,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const Divider(),
-                        Text('Subject Code: ${attendance.uid ?? "N/A"}'),
+                        Text('Subject Name: ${attendance.subject}'),
                         Text(
                             'Required Attendance: ${attendance.requiredPercentage}%'),
                         Text(
@@ -112,8 +112,9 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                           Text(
                             'Classes needed to pass: ${attendance.classesNeededToPass()}',
                             style: TextStyle(
-                                color: Colors.red[700],
-                                fontWeight: FontWeight.bold),
+                              color: Colors.red[700],
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                       ],
                     ),
@@ -160,61 +161,70 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                _btn(
+                  onTap: () async {
+                    final result = await _showReasonDialog(context, 'Present');
+                    if (result != null) {
+                      final parts = result.split('|');
+                      final date = DateTime.parse(parts[0]);
+                      attendanceController.markAttendance(
+                        AttendanceType.present,
+                        '',
+                        date,
+                      );
+                    }
+                  },
+                  color: Colors.green,
+                  text: "Mark Present",
+                ),
+                const SizedBox(
+                  height: 8,
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _btn(
-                      onTap: () async {
-                        final result =
-                            await _showReasonDialog(context, 'Present');
-                        if (result != null) {
-                          final parts = result.split('|');
-                          final date = DateTime.parse(parts[0]);
-                          attendanceController.markAttendance(
-                            AttendanceType.present,
-                            '',
-                            date,
-                          );
-                        }
-                      },
-                      color: Colors.green,
-                      text: "Mark Present",
+                    Expanded(
+                      child: _btn(
+                        onTap: () async {
+                          final reason =
+                              await _showReasonDialog(context, 'Absent');
+                          if (reason != null) {
+                            final parts = reason.split('|');
+                            final date = DateTime.parse(parts[0]);
+                            final reasonText = parts[1];
+                            attendanceController.markAttendance(
+                              AttendanceType.absent,
+                              reasonText,
+                              date,
+                            );
+                          }
+                        },
+                        color: Colors.red,
+                        text: "Mark Absent",
+                      ),
                     ),
-                    _btn(
-                      onTap: () async {
-                        final reason =
-                            await _showReasonDialog(context, 'Absent');
-                        if (reason != null) {
-                          final parts = reason.split('|');
-                          final date = DateTime.parse(parts[0]);
-                          final reasonText = parts[1];
-                          attendanceController.markAttendance(
-                            AttendanceType.absent,
-                            reasonText,
-                            date,
-                          );
-                        }
-                      },
-                      color: Colors.red,
-                      text: "Mark Absent",
+                    const SizedBox(
+                      width: 4,
                     ),
-                    _btn(
-                      onTap: () async {
-                        final reason =
-                            await _showReasonDialog(context, 'Leave');
-                        if (reason != null) {
-                          final parts = reason.split('|');
-                          final date = DateTime.parse(parts[0]);
-                          final reasonText = parts[1];
-                          attendanceController.markAttendance(
-                            AttendanceType.leave,
-                            reasonText,
-                            date,
-                          );
-                        }
-                      },
-                      color: const Color.fromARGB(255, 62, 59, 17),
-                      text: "Mark Leave",
+                    Expanded(
+                      child: _btn(
+                        onTap: () async {
+                          final reason =
+                              await _showReasonDialog(context, 'Leave');
+                          if (reason != null) {
+                            final parts = reason.split('|');
+                            final date = DateTime.parse(parts[0]);
+                            final reasonText = parts[1];
+                            attendanceController.markAttendance(
+                              AttendanceType.leave,
+                              reasonText,
+                              date,
+                            );
+                          }
+                        },
+                        color: const Color.fromARGB(255, 62, 59, 17),
+                        text: "Mark Leave",
+                      ),
                     ),
                   ],
                 ),
@@ -242,6 +252,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                                     } else {
                                       selectedLogs.remove(log.id);
                                     }
+                                    setState(() {});
                                   },
                                 )
                               : Icon(
@@ -264,6 +275,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                               isSelectionMode.value = true;
                               selectedLogs.add(log.id);
                             }
+                            setState(() {});
                           },
                           onTap: () {
                             if (isSelectionMode.value) {
@@ -291,17 +303,16 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
     );
   }
 
-  GestureDetector _btn(
+  Widget _btn(
       {required Function()? onTap,
       required Color color,
       required String text}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 6,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        width: double.infinity,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(24),
@@ -484,6 +495,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                 'Subject deleted successfully',
                 backgroundColor: Colors.red,
                 colorText: Colors.white,
+                dismissDirection: DismissDirection.horizontal,
               );
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
