@@ -1,26 +1,62 @@
+import 'package:f_star/controllers/log_controller.dart';
+import 'package:f_star/screens/attendance/attendance_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/attendance_list_controller.dart';
 import '../../components/attendance_card.dart';
 import '../../models/attendance_model.dart';
+import '../subject/add_subject_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final attendanceListController = Get.find<AttendanceListController>();
+    final attendanceListController = Get.put(AttendanceListController());
+    Get.put(LogController());
+    final isSelectionMode = false.obs;
+    final selectedSubjects = <String>{}.obs;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('F* Attendance Tracker'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // TODO: Navigate to settings screen
-            },
-          ),
+          Obx(() => isSelectionMode.value
+              ? Row(
+                  children: [
+                    Text('${selectedSubjects.length} selected'),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        isSelectionMode.value = false;
+                        selectedSubjects.clear();
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _showDeleteConfirmation(
+                        context,
+                        attendanceListController,
+                        selectedSubjects,
+                        isSelectionMode,
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.select_all),
+                      onPressed: () => isSelectionMode.value = true,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.settings),
+                      onPressed: () {
+                        // TODO: Navigate to settings screen
+                      },
+                    ),
+                  ],
+                )),
         ],
       ),
       body: CustomScrollView(
@@ -96,12 +132,63 @@ class HomeScreen extends StatelessWidget {
             sliver: Obx(() => SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
+                      final subject =
+                          attendanceListController.attendanceList[index];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
-                        child: AttendanceCard(
-                          attendance:
-                              attendanceListController.attendanceList[index],
-                        ),
+                        child: Obx(() => InkWell(
+                              onLongPress: () {
+                                if (!isSelectionMode.value) {
+                                  isSelectionMode.value = true;
+                                  selectedSubjects.add(subject.uid!);
+                                }
+                              },
+                              onTap: () {
+                                if (isSelectionMode.value) {
+                                  if (selectedSubjects.contains(subject.uid)) {
+                                    selectedSubjects.remove(subject.uid);
+                                    if (selectedSubjects.isEmpty) {
+                                      isSelectionMode.value = false;
+                                    }
+                                  } else {
+                                    selectedSubjects.add(subject.uid!);
+                                  }
+                                } else {
+                                  Get.to(() => AttendanceDetailScreen(
+                                        attendanceModel: subject,
+                                      ));
+                                }
+                              },
+                              child: Stack(
+                                children: [
+                                  AttendanceCard(attendance: subject),
+                                  if (isSelectionMode.value)
+                                    Positioned(
+                                      right: 8,
+                                      top: 8,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(2.0),
+                                          child: Icon(
+                                            selectedSubjects
+                                                    .contains(subject.uid)
+                                                ? Icons.check_circle
+                                                : Icons.circle_outlined,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            )),
                       );
                     },
                     childCount: attendanceListController.attendanceList.length,
@@ -111,10 +198,46 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Add new subject
-        },
+        onPressed: () => Get.to(() => AddSubjectScreen()),
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(
+    BuildContext context,
+    AttendanceListController controller,
+    Set<String> selectedSubjects,
+    RxBool isSelectionMode,
+  ) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Subjects'),
+        content: Text(
+            'Are you sure you want to delete ${selectedSubjects.length} subjects?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              for (var uid in selectedSubjects) {
+                controller.deleteSubject(uid);
+              }
+              isSelectionMode.value = false;
+              selectedSubjects.clear();
+              Get.back();
+              Get.snackbar(
+                'Success',
+                'Subjects deleted successfully',
+                backgroundColor: Colors.red,
+                colorText: Colors.white,
+              );
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,7 @@
+import 'package:f_star/controllers/attendance_list_controller.dart';
 import 'package:f_star/models/attendance_model.dart';
 import 'package:f_star/models/log_model.dart';
+import 'package:f_star/screens/attendance/attendance_calendar_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:pie_chart/pie_chart.dart';
 import 'package:get/get.dart';
@@ -31,6 +33,18 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.attendanceModel.subject),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_month),
+            onPressed: () => Get.to(() => AttendanceCalendarScreen(
+                  controller: attendanceController,
+                )),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () => _showDeleteConfirmation(context),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -128,11 +142,18 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _btn(
-                      onTap: () => {
-                        attendanceController.markAttendance(
-                          AttendanceType.present,
-                          '',
-                        )
+                      onTap: () async {
+                        final result =
+                            await _showReasonDialog(context, 'Present');
+                        if (result != null) {
+                          final parts = result.split('|');
+                          final date = DateTime.parse(parts[0]);
+                          attendanceController.markAttendance(
+                            AttendanceType.present,
+                            '',
+                            date,
+                          );
+                        }
                       },
                       color: Colors.green,
                       text: "Mark Present",
@@ -142,9 +163,13 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                         final reason =
                             await _showReasonDialog(context, 'Absent');
                         if (reason != null) {
+                          final parts = reason.split('|');
+                          final date = DateTime.parse(parts[0]);
+                          final reasonText = parts[1];
                           attendanceController.markAttendance(
                             AttendanceType.absent,
-                            reason,
+                            reasonText,
+                            date,
                           );
                         }
                       },
@@ -156,9 +181,13 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                         final reason =
                             await _showReasonDialog(context, 'Leave');
                         if (reason != null) {
+                          final parts = reason.split('|');
+                          final date = DateTime.parse(parts[0]);
+                          final reasonText = parts[1];
                           attendanceController.markAttendance(
                             AttendanceType.leave,
-                            reason,
+                            reasonText,
+                            date,
                           );
                         }
                       },
@@ -175,16 +204,19 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                 const Divider(),
                 SizedBox(
                   height: 200,
-                  child: Obx(() => ListView.builder(
-                        itemCount: attendanceController.history.length,
-                        itemBuilder: (context, index) {
-                          final log = attendanceController.history[index];
-                          return ListTile(
-                            title: Text('${log.type}: ${log.reason}'),
-                            subtitle: Text(log.date.toString()),
-                          );
-                        },
-                      )),
+                  child: Obx(
+                    () => ListView.builder(
+                      itemCount: attendanceController.history.length,
+                      itemBuilder: (context, index) {
+                        final log = attendanceController.history[index];
+                        return ListTile(
+                          title: Text(log.reason ?? "No Reasons"),
+                          subtitle: Text(log.getType()),
+                          trailing: Text(log.date.toString().substring(0, 10)),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -362,6 +394,37 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
                   '${selectedDate.toIso8601String()}|${reasonController.text}',
             ),
             child: const Text('Submit'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Subject'),
+        content: Text(
+            'Are you sure you want to delete ${widget.attendanceModel.subject}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final listController = Get.find<AttendanceListController>();
+              listController.deleteSubject(widget.attendanceModel.uid ?? '');
+              Get.back();
+              Get.back(); // Return to home screen
+              Get.snackbar(
+                'Success',
+                'Subject deleted successfully',
+                backgroundColor: Colors.red,
+                colorText: Colors.white,
+              );
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

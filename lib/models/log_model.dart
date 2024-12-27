@@ -36,6 +36,16 @@ class LogModel {
     );
   }
 
+  String getType() {
+    if (type == AttendanceType.present) {
+      return "Present";
+    } else if (type == AttendanceType.absent) {
+      return "Absent";
+    } else {
+      return "Leave";
+    }
+  }
+
   // Helper method to get logs between date range
   static bool isInDateRange(LogModel log, DateTime start, DateTime end) {
     return log.date.isAfter(start) && log.date.isBefore(end);

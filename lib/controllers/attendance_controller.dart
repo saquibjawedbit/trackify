@@ -2,10 +2,23 @@ import 'package:get/get.dart';
 import '../models/attendance_model.dart';
 import '../models/log_model.dart';
 import 'attendance_list_controller.dart';
+import 'log_controller.dart';
 
 class AttendanceController extends GetxController {
   final attendance = Rx<AttendanceModel?>(null);
+  final logController = Get.find<LogController>();
   final history = <LogModel>[].obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    ever(attendance, (_) {
+      if (attendance.value != null) {
+        history.value =
+            logController.getLogsForSubject(attendance.value!.subject);
+      }
+    });
+  }
 
   void initAttendance(AttendanceModel attendance) {
     this.attendance.value = attendance;
@@ -19,7 +32,11 @@ class AttendanceController extends GetxController {
       type: type,
       reason: reason.isEmpty ? null : reason,
       date: date,
+      uid: 'log_${DateTime.now().millisecondsSinceEpoch}',
     );
+
+    logController.addLog(log);
+    history.add(log);
 
     switch (type) {
       case AttendanceType.present:
@@ -27,16 +44,13 @@ class AttendanceController extends GetxController {
         break;
       case AttendanceType.absent:
         attendance.value!.absentClasses++;
-        history.add(log);
         break;
       case AttendanceType.leave:
         attendance.value!.leaveClasses++;
-        history.add(log);
         break;
     }
     attendance.refresh();
 
-    // Update the global attendance list
     final listController = Get.find<AttendanceListController>();
     listController.updateAttendance(attendance.value!);
   }

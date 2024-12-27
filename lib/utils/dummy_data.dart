@@ -1,7 +1,5 @@
 import 'dart:math';
-import 'package:get/get.dart';
 import '../models/attendance_model.dart';
-import '../controllers/attendance_list_controller.dart';
 
 class DummyData {
   static final Random _random = Random();
@@ -31,10 +29,5 @@ class DummyData {
         requiredPercentage: 75.0,
       );
     }).toList();
-  }
-
-  static void initializeDummyData() {
-    final listController = Get.put(AttendanceListController());
-    listController.attendanceList.value = getDummyAttendance();
   }
 }
