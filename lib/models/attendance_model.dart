@@ -1,3 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+
 class AttendanceModel {
   final String subject;
   final double? requiredPercentage;
@@ -38,12 +42,62 @@ class AttendanceModel {
 
   Map<String, dynamic> toMap() {
     return {
+      'uid': uid,
       'subject': subject,
       'requiredPercentage': requiredPercentage,
       'presentClasses': presentClasses,
       'absentClasses': absentClasses,
       'leaveClasses': leaveClasses,
+      'userId': FirebaseAuth.instance.currentUser?.uid,
+      'updatedAt': FieldValue.serverTimestamp(),
     };
+  }
+
+  Future<void> saveToFirestore() async {
+    final firestore = FirebaseFirestore.instance;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    try {
+      final data = {
+        'subject': subject,
+        'requiredPercentage': requiredPercentage,
+        'presentClasses': presentClasses,
+        'absentClasses': absentClasses,
+        'leaveClasses': leaveClasses,
+        'userId': userId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (uid != null) {
+        // Document exists, update it
+        await firestore.collection('attendance').doc(uid).set(
+              data,
+              SetOptions(merge: true),
+            );
+      } else {
+        // Create new document
+        final docRef = await firestore.collection('attendance').add(data);
+        // Update the uid field after creation
+        await docRef.update({'uid': docRef.id});
+      }
+    } catch (e) {
+      debugPrint('Error saving attendance: $e');
+    }
+  }
+
+  static Future<List<AttendanceModel>> loadAllFromFirestore() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return [];
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('attendance')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => AttendanceModel.fromMap({...doc.data(), 'uid': doc.id}))
+        .toList();
   }
 
   factory AttendanceModel.fromMap(Map<String, dynamic> map) {

@@ -1,3 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 enum AttendanceType { present, absent, leave }
 
 class LogModel {
@@ -38,6 +41,36 @@ class LogModel {
       reason: map['reason'] as String?,
       date: DateTime.parse(map['date'] as String),
     );
+  }
+
+  Future<void> saveToFirestore() async {
+    final firestore = FirebaseFirestore.instance;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    await firestore.collection('logs').doc(id).set({
+      ...toMap(),
+      'userId': userId,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  static Future<List<LogModel>> getLogsForSubject(String subjectId) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return [];
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('logs')
+        .where('userId', isEqualTo: userId)
+        .where('subjectId', isEqualTo: subjectId)
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    return snapshot.docs.map((doc) => LogModel.fromMap(doc.data())).toList();
+  }
+
+  static Future<void> deleteLog(String logId) async {
+    await FirebaseFirestore.instance.collection('logs').doc(logId).delete();
   }
 
   String getType() {

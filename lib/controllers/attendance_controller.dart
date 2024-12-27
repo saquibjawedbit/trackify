@@ -12,10 +12,11 @@ class AttendanceController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    ever(attendance, (_) {
+    ever(attendance, (_) async {
       if (attendance.value != null) {
-        history.value =
-            logController.getLogsForSubject(attendance.value!.subject);
+        final logs =
+            await logController.getLogsForSubject(attendance.value!.subject);
+        history.value = logs;
       }
     });
   }
@@ -24,7 +25,8 @@ class AttendanceController extends GetxController {
     this.attendance.value = attendance;
   }
 
-  void markAttendance(AttendanceType type, String reason, [DateTime? date]) {
+  Future<void> markAttendance(AttendanceType type, String reason,
+      [DateTime? date]) async {
     if (attendance.value == null) return;
 
     final log = LogModel(
@@ -34,7 +36,7 @@ class AttendanceController extends GetxController {
       date: date,
     );
 
-    logController.addLog(log);
+    await log.saveToFirestore();
     history.add(log);
 
     switch (type) {
@@ -52,48 +54,57 @@ class AttendanceController extends GetxController {
 
     final listController = Get.find<AttendanceListController>();
     listController.updateAttendance(attendance.value!);
+    await attendance.value!.saveToFirestore();
   }
 
-  void updateAttendanceCounts({
+  Future<void> updateAttendanceCounts({
     required int present,
     required int absent,
     required int leaves,
-  }) {
+  }) async {
     if (attendance.value == null) return;
 
-    attendance.value!.presentClasses = present;
-    attendance.value!.absentClasses = absent;
-    attendance.value!.leaveClasses = leaves;
-    attendance.refresh();
+    try {
+      attendance.value!.presentClasses = present;
+      attendance.value!.absentClasses = absent;
+      attendance.value!.leaveClasses = leaves;
 
-    final listController = Get.find<AttendanceListController>();
-    listController.updateAttendance(attendance.value!);
+      // Save to Firestore
+      await attendance.value!.saveToFirestore();
+
+      // Update local state
+      attendance.refresh();
+
+      // Update list controller
+      final listController = Get.find<AttendanceListController>();
+      await listController.updateAttendance(attendance.value!);
+
+      Get.snackbar('Success', 'Attendance updated successfully');
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to update attendance: $e');
+    }
   }
 
-  void deleteLogs(List<String> logIds) {
-    history.removeWhere((log) {
-      if (logIds.contains(log.id)) {
-        print("Found");
-        return true;
-      }
-
-      return false;
-    });
+  Future<void> deleteLogs(List<String> logIds) async {
     for (var id in logIds) {
-      logController.deleteLog(id);
-    } // Use forEach instead of map
-    _updateAttendanceCounts();
-    saveAttendance();
+      await LogModel.deleteLog(id);
+    }
+    history.removeWhere((log) => logIds.contains(log.id));
+
+    await _updateAttendanceCounts();
+    await saveAttendance();
   }
 
-  void _updateAttendanceCounts() {
+  Future<void> _updateAttendanceCounts() async {
     if (attendance.value == null) return;
 
     int present = 0;
     int absent = 0;
     int leaves = 0;
 
-    for (var log in history) {
+    final logs =
+        await logController.getLogsForSubject(attendance.value!.subject);
+    for (var log in logs) {
       switch (log.type) {
         case AttendanceType.present:
           present++;
@@ -107,17 +118,16 @@ class AttendanceController extends GetxController {
       }
     }
 
-    updateAttendanceCounts(
+    await updateAttendanceCounts(
       present: present,
       absent: absent,
       leaves: leaves,
     );
   }
 
-  void saveAttendance() {
+  Future<void> saveAttendance() async {
     if (attendance.value != null) {
-      final listController = Get.find<AttendanceListController>();
-      listController.updateAttendance(attendance.value!);
+      await attendance.value!.saveToFirestore();
     }
   }
 }

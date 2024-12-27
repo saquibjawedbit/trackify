@@ -1,29 +1,50 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+
 import '../models/log_model.dart';
+import '../services/cache_service.dart';
 
 class LogController extends GetxController {
   final _logs = <LogModel>[].obs;
   final selectedDate = DateTime.now().obs;
-
   List<LogModel> get logs => _logs.toList();
 
   // CRUD Operations
-  void addLog(LogModel log) {
-    _logs.add(log);
-    _sortLogs();
-    _saveLogs(); // TODO: Implement persistence
+  Future<void> addLog(LogModel log) async {
+    try {
+      await log.saveToFirestore();
+      await _loadLogs(); // Refresh logs from Firestore
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to add log: $e');
+    }
   }
 
-  void deleteLog(String logId) {
-    _logs.removeWhere((log) => log.id == logId);
-    _logs.refresh();
-    _saveLogs();
+  Future<void> deleteLog(String logId) async {
+    try {
+      await LogModel.deleteLog(logId);
+      await _loadLogs(); // Refresh logs from Firestore
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to delete log: $e');
+    }
   }
 
-  void deleteLogs(String subjectId) {
-    _logs.removeWhere((log) => log.subjectId == subjectId);
-    _logs.refresh();
-    _saveLogs();
+  Future<void> deleteLogs(String subjectId) async {
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+      final logsToDelete = await FirebaseFirestore.instance
+          .collection('logs')
+          .where('subjectId', isEqualTo: subjectId)
+          .get();
+
+      for (var doc in logsToDelete.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      await _loadLogs(); // Refresh logs from Firestore
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to delete logs: $e');
+    }
   }
 
   void clearAllLogs() {
@@ -32,12 +53,31 @@ class LogController extends GetxController {
   }
 
   // Query Methods
-  List<LogModel> getLogsForSubject(String subjectId) {
-    return _logs
-        .where((log) => log.subjectId == subjectId)
-        .toList()
-        .reversed
-        .toList();
+  Future<List<LogModel>> getLogsForSubject(String subjectId) async {
+    try {
+      // First try to get from local cache
+      final cachedLogs =
+          _logs.where((log) => log.subjectId == subjectId).toList();
+      if (cachedLogs.isNotEmpty) {
+        return cachedLogs;
+      }
+
+      // If not in cache, get from Firestore
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) return [];
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('logs')
+          .where('userId', isEqualTo: userId)
+          .where('subjectId', isEqualTo: subjectId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) => LogModel.fromMap(doc.data())).toList();
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to load subject logs: $e');
+      return [];
+    }
   }
 
   List<LogModel> getLogsForDate(DateTime date) {
@@ -58,9 +98,9 @@ class LogController extends GetxController {
   }
 
   // Statistics Methods
-  Map<AttendanceType, int> getAttendanceStats(String subjectId) {
+  Future<Map<AttendanceType, int>> getAttendanceStats(String subjectId) async {
     final stats = <AttendanceType, int>{};
-    final subjectLogs = getLogsForSubject(subjectId);
+    final subjectLogs = await getLogsForSubject(subjectId);
 
     for (var type in AttendanceType.values) {
       stats[type] = subjectLogs.where((log) => log.type == type).length;
@@ -68,8 +108,8 @@ class LogController extends GetxController {
     return stats;
   }
 
-  double getAttendancePercentage(String subjectId) {
-    final stats = getAttendanceStats(subjectId);
+  Future<double> getAttendancePercentage(String subjectId) async {
+    final stats = await getAttendanceStats(subjectId);
     final total = stats.values.fold(0, (sum, count) => sum + count);
     if (total == 0) return 0;
 
@@ -78,8 +118,9 @@ class LogController extends GetxController {
   }
 
   // Calendar View Methods
-  Map<DateTime, List<LogModel>> getLogsGroupedByDate(String subjectId) {
-    final subjectLogs = getLogsForSubject(subjectId);
+  Future<Map<DateTime, List<LogModel>>> getLogsGroupedByDate(
+      String subjectId) async {
+    final subjectLogs = await getLogsForSubject(subjectId);
     final groupedLogs = <DateTime, List<LogModel>>{};
 
     for (var log in subjectLogs) {
@@ -98,19 +139,57 @@ class LogController extends GetxController {
     _logs.refresh();
   }
 
-  // Persistence Methods - TODO: Implement these
   Future<void> _saveLogs() async {
-    // Save logs to local storage
+    // No need to implement as we're using Firestore directly
   }
 
   Future<void> _loadLogs() async {
-    // Load logs from local storage
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        _logs.clear();
+        return;
+      }
+
+      // First load from cache
+      final cachedLogs = await CacheService.getCachedLogs();
+      if (cachedLogs.isNotEmpty) {
+        _logs.value = cachedLogs;
+        _sortLogs();
+      }
+
+      // Then try to load from Firestore
+      final snapshot = await FirebaseFirestore.instance
+          .collection('logs')
+          .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      final fireStoreLogs =
+          snapshot.docs.map((doc) => LogModel.fromMap(doc.data())).toList();
+
+      if (fireStoreLogs.isNotEmpty) {
+        _logs.value = fireStoreLogs;
+        _sortLogs();
+        // Update cache with new data
+        await CacheService.cacheLogs(fireStoreLogs);
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to load logs: $e');
+    }
   }
 
   @override
   void onInit() {
     super.onInit();
-    _loadLogs();
+    // Listen to auth state changes
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        _loadLogs();
+      } else {
+        _logs.clear();
+      }
+    });
   }
 
   @override
