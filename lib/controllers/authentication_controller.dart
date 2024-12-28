@@ -51,10 +51,14 @@ class AuthenticationController extends GetxController {
           message = 'Invalid email address';
           break;
       }
-      Get.snackbar('Error', message,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Get.theme.colorScheme.error,
-          colorText: Get.theme.colorScheme.onError);
+      Get.snackbar(
+        'Error',
+        message,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.error,
+        colorText: Get.theme.colorScheme.onError,
+        duration: const Duration(seconds: 1),
+      );
     } on FirebaseException catch (e) {
       Get.snackbar(
         'Error',
@@ -62,6 +66,7 @@ class AuthenticationController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Get.theme.colorScheme.error,
         colorText: Get.theme.colorScheme.onError,
+        duration: const Duration(seconds: 1),
       );
     } finally {
       isLoading.value = false;
@@ -153,4 +158,5 @@ class AuthenticationController extends GetxController {
   bool get isAuthenticated => currentUser.value != null;
   String? get userName => currentUser.value?.displayName;
   String? get userEmail => currentUser.value?.email;
+  String? get userId => currentUser.value?.uid;
 }

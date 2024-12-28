@@ -60,7 +60,6 @@ class AIService {
   Future<String> getAIResponse(String query) async {
     try {
       final url = Uri.parse('$_baseUrl?key=$_apiKey');
-
       final requestBody = {
         'contents': [
           {

@@ -487,7 +487,7 @@ class _AttendanceDetailScreenState extends State<AttendanceDetailScreen> {
           TextButton(
             onPressed: () {
               final listController = Get.find<AttendanceListController>();
-              listController.deleteSubject(widget.attendanceModel.uid ?? '');
+              listController.deleteSubject(widget.attendanceModel.subject);
               Get.back();
               Get.back(); // Return to home screen
               Get.snackbar(

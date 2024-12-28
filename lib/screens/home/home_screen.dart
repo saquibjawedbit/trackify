@@ -1,6 +1,7 @@
 import 'package:f_star/controllers/log_controller.dart';
 import 'package:f_star/screens/ai_chat/chat_with_ai_screen.dart';
 import 'package:f_star/screens/attendance/attendance_detail_screen.dart';
+import 'package:f_star/screens/settings/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/attendance_list_controller.dart';
@@ -52,9 +53,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.settings),
-                      onPressed: () {
-                        // TODO: Navigate to settings screen
-                      },
+                      onPressed: () => Get.to(() => const SettingsScreen()),
                     ),
                   ],
                 )),
@@ -213,19 +212,20 @@ class HomeScreen extends StatelessWidget {
                                     onLongPress: () {
                                       if (!isSelectionMode.value) {
                                         isSelectionMode.value = true;
-                                        selectedSubjects.add(subject.uid!);
+                                        selectedSubjects.add(subject.subject);
                                       }
                                     },
                                     onTap: () {
                                       if (isSelectionMode.value) {
                                         if (selectedSubjects
-                                            .contains(subject.uid)) {
-                                          selectedSubjects.remove(subject.uid);
+                                            .contains(subject.subject)) {
+                                          selectedSubjects
+                                              .remove(subject.subject);
                                           if (selectedSubjects.isEmpty) {
                                             isSelectionMode.value = false;
                                           }
                                         } else {
-                                          selectedSubjects.add(subject.uid!);
+                                          selectedSubjects.add(subject.subject);
                                         }
                                       } else {
                                         Get.to(
@@ -304,7 +304,9 @@ class HomeScreen extends StatelessWidget {
           TextButton(
             onPressed: () {
               for (var uid in selectedSubjects) {
-                controller.deleteSubject(uid);
+                controller.deleteSubject(
+                  uid,
+                );
               }
               isSelectionMode.value = false;
               selectedSubjects.clear();

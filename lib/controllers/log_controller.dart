@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../models/log_model.dart';
@@ -16,16 +17,27 @@ class LogController extends GetxController {
       await log.saveToFirestore();
       await _loadLogs(); // Refresh logs from Firestore
     } catch (e) {
-      Get.snackbar('Error', 'Failed to add log: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to add log: $e',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
     }
   }
 
   Future<void> deleteLog(String logId) async {
     try {
       await LogModel.deleteLog(logId);
+      await CacheService.clearLogs(); // Clear cache
       await _loadLogs(); // Refresh logs from Firestore
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete log: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to delete log: $e',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
     }
   }
 
@@ -41,28 +53,43 @@ class LogController extends GetxController {
         batch.delete(doc.reference);
       }
       await batch.commit();
+
+      // Clear cache
+      await CacheService.clearLogs();
       await _loadLogs(); // Refresh logs from Firestore
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete logs: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to delete logs: $e',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
     }
   }
 
-  void clearAllLogs() {
-    _logs.clear();
-    _saveLogs();
+  void clearAllLogs() async {
+    try {
+      _logs.clear();
+      await CacheService.clearLogs();
+      Get.snackbar(
+        'Success',
+        'All logs cleared',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to clear logs: $e',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
+    }
   }
 
   // Query Methods
   Future<List<LogModel>> getLogsForSubject(String subjectId) async {
     try {
-      // First try to get from local cache
-      final cachedLogs =
-          _logs.where((log) => log.subjectId == subjectId).toList();
-      if (cachedLogs.isNotEmpty) {
-        return cachedLogs;
-      }
-
-      // If not in cache, get from Firestore
       final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) return [];
 
@@ -70,10 +97,16 @@ class LogController extends GetxController {
           .collection('logs')
           .where('userId', isEqualTo: userId)
           .where('subjectId', isEqualTo: subjectId)
-          .orderBy('createdAt', descending: true)
+          .orderBy('date',
+              descending: true) // Sort by date instead of createdAt
           .get();
 
-      return snapshot.docs.map((doc) => LogModel.fromMap(doc.data())).toList();
+      final logs =
+          snapshot.docs.map((doc) => LogModel.fromMap(doc.data())).toList();
+
+      // Sort locally to ensure correct order
+      logs.sort((a, b) => b.date.compareTo(a.date));
+      return logs;
     } catch (e) {
       Get.snackbar('Error', 'Failed to load subject logs: $e');
       return [];
@@ -175,7 +208,12 @@ class LogController extends GetxController {
         await CacheService.cacheLogs(fireStoreLogs);
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load logs: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to load logs: $e',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
     }
   }
 

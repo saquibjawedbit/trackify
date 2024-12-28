@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/attendance_model.dart';
 import '../models/log_model.dart';
@@ -29,32 +30,60 @@ class AttendanceController extends GetxController {
       [DateTime? date]) async {
     if (attendance.value == null) return;
 
-    final log = LogModel(
-      subjectId: attendance.value!.subject,
-      type: type,
-      reason: reason.isEmpty ? null : reason,
-      date: date,
-    );
+    try {
+      final log = LogModel(
+        subjectId: attendance.value!.subject,
+        type: type,
+        reason: reason.isEmpty ? null : reason,
+        date: date,
+      );
 
-    await log.saveToFirestore();
-    history.add(log);
+      // Save log to Firestore first
+      await log.saveToFirestore();
 
-    switch (type) {
-      case AttendanceType.present:
-        attendance.value!.presentClasses++;
-        break;
-      case AttendanceType.absent:
-        attendance.value!.absentClasses++;
-        break;
-      case AttendanceType.leave:
-        attendance.value!.leaveClasses++;
-        break;
+      // Update local history immediately
+      history.insert(0, log); // Add to beginning of list since it's newest
+      history.refresh(); // Force UI update
+
+      // Update attendance counts
+      switch (type) {
+        case AttendanceType.present:
+          attendance.value!.presentClasses++;
+          break;
+        case AttendanceType.absent:
+          attendance.value!.absentClasses++;
+          break;
+        case AttendanceType.leave:
+          attendance.value!.leaveClasses++;
+          break;
+      }
+
+      // Save attendance changes
+      attendance.refresh();
+      final listController = Get.find<AttendanceListController>();
+      await listController.updateAttendance(attendance.value!);
+      await attendance.value!.saveToFirestore();
+
+      // Refresh logs from Firestore to ensure consistency
+      final updatedLogs =
+          await logController.getLogsForSubject(attendance.value!.subject);
+      history.value = updatedLogs;
+      history.refresh();
+
+      Get.snackbar(
+        'Success',
+        'Attendance marked as ${type.toString().split('.').last}',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to mark attendance: $e',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
     }
-    attendance.refresh();
-
-    final listController = Get.find<AttendanceListController>();
-    listController.updateAttendance(attendance.value!);
-    await attendance.value!.saveToFirestore();
   }
 
   Future<void> updateAttendanceCounts({
@@ -79,9 +108,19 @@ class AttendanceController extends GetxController {
       final listController = Get.find<AttendanceListController>();
       await listController.updateAttendance(attendance.value!);
 
-      Get.snackbar('Success', 'Attendance updated successfully');
+      Get.snackbar(
+        'Success',
+        'Attendance updated successfully',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to update attendance: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to update attendance: $e',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
     }
   }
 

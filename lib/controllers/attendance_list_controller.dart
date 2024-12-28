@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/attendance_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -23,13 +25,19 @@ class AttendanceListController extends GetxController {
 
       // Then try to load from Firestore
       final subjects = await AttendanceModel.loadAllFromFirestore();
+
       if (subjects.isNotEmpty) {
         attendanceList.value = subjects;
         // Update cache with new data
         await CacheService.cacheAttendance(subjects);
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load attendance: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to load attendance: $e',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
     }
   }
 
@@ -43,7 +51,12 @@ class AttendanceListController extends GetxController {
         attendanceList.refresh();
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to update attendance: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to update attendance: $e',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
     }
   }
 
@@ -60,30 +73,70 @@ class AttendanceListController extends GetxController {
 
       // Reload attendance list to get updated data
       await loadAttendance();
-
-      Get.snackbar('Success', 'Subject added successfully');
     } catch (e) {
-      Get.snackbar('Error', 'Failed to add subject: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to add subject: $e',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
     }
   }
 
-  Future<void> deleteSubject(String uid) async {
-    await FirebaseFirestore.instance.collection('attendance').doc(uid).delete();
-    attendanceList.removeWhere((s) => s.uid == uid);
+  Future<void> deleteSubject(String subjectId) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final subject = await FirebaseFirestore.instance
+          .collection('attendance')
+          .where('userId', isEqualTo: uid)
+          .where('subject', isEqualTo: subjectId)
+          // Ensure it belongs to the current user
+          .get();
 
-    // Delete associated logs
-    final batch = FirebaseFirestore.instance.batch();
-    final logs = await FirebaseFirestore.instance
-        .collection('logs')
-        .where('subjectId', isEqualTo: uid)
-        .get();
+      // Delete the subject document
+      for (var doc in subject.docs) {
+        await doc.reference.delete();
+      }
 
-    for (var doc in logs.docs) {
-      batch.delete(doc.reference);
+      attendanceList.removeWhere((s) => s.subject == subjectId);
+
+      // Delete associated logs
+      final batch = FirebaseFirestore.instance.batch();
+      final logs = await FirebaseFirestore.instance
+          .collection('logs')
+          .where('subjectId', isEqualTo: subjectId)
+          .where(
+            'userId',
+            isEqualTo: uid,
+          ) // Ensure logs belong to the current user
+          .get();
+
+      // Add delete operations to batch
+      for (var doc in logs.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // Execute batch
+      await batch.commit();
+
+      // Clear both caches since we've deleted logs and attendance
+      await CacheService.clearAllCache();
+
+      attendanceList.refresh();
+      Get.snackbar(
+        'Success',
+        'Subject and related logs deleted',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to delete subject: $e',
+        duration: const Duration(seconds: 1),
+        dismissDirection: DismissDirection.horizontal,
+      );
     }
-    await batch.commit();
-
-    attendanceList.refresh();
   }
 
   List<AttendanceModel> get filteredAttendanceList {

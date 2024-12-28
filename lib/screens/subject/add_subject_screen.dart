@@ -80,6 +80,8 @@ class AddSubjectScreen extends StatelessWidget {
                     Get.snackbar(
                       'Success',
                       'Subject added successfully',
+                      duration: const Duration(seconds: 1),
+                      dismissDirection: DismissDirection.horizontal,
                       backgroundColor: Colors.green,
                       colorText: Colors.white,
                     );

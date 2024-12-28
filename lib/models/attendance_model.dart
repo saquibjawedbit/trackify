@@ -53,6 +53,19 @@ class AttendanceModel {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'uid': uid,
+      'subject': subject,
+      'requiredPercentage': requiredPercentage,
+      'presentClasses': presentClasses,
+      'absentClasses': absentClasses,
+      'leaveClasses': leaveClasses,
+      'userId': FirebaseAuth.instance.currentUser?.uid,
+      'updatedAt': FieldValue.serverTimestamp().toString(),
+    };
+  }
+
   Future<void> saveToFirestore() async {
     final firestore = FirebaseFirestore.instance;
     final userId = FirebaseAuth.instance.currentUser?.uid;

@@ -9,7 +9,7 @@ class CacheService {
 
   static Future<void> cacheAttendance(List<AttendanceModel> attendance) async {
     final prefs = await SharedPreferences.getInstance();
-    final data = attendance.map((a) => jsonEncode(a.toMap())).toList();
+    final data = attendance.map((a) => jsonEncode(a.toJson())).toList();
     await prefs.setStringList(_attendanceKey, data);
   }
 
@@ -29,5 +29,21 @@ class CacheService {
     final prefs = await SharedPreferences.getInstance();
     final data = prefs.getStringList(_logsKey) ?? [];
     return data.map((str) => LogModel.fromMap(jsonDecode(str))).toList();
+  }
+
+  static Future<void> clearLogs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_logsKey);
+  }
+
+  static Future<void> clearAttendance() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_attendanceKey);
+  }
+
+  static Future<void> clearAllCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_logsKey);
+    await prefs.remove(_attendanceKey);
   }
 }
