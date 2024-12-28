@@ -15,6 +15,12 @@ class GetStartedScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Spacer(),
+              Image.asset(
+                'assets/giant_phone.png',
+                width: 360,
+                height: 360,
+                fit: BoxFit.fitWidth,
+              ),
               Text(
                 "Welcome to F*",
                 style: Theme.of(context).textTheme.titleMedium,

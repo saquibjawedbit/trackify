@@ -57,7 +57,7 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('Logout'),
             onTap: () {
               FirebaseAuth.instance.signOut();
-              Get.toNamed('/login');
+              Get.offAllNamed('/login');
             },
           ),
         ],

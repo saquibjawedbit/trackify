@@ -1,6 +1,6 @@
+import 'package:f_star/controllers/attendance_list_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/attendance_list_controller.dart';
 import '../../models/attendance_model.dart';
 
 class AddSubjectScreen extends StatelessWidget {
@@ -12,6 +12,7 @@ class AddSubjectScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<AttendanceListController>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add New Subject'),
@@ -31,6 +32,11 @@ class AddSubjectScreen extends StatelessWidget {
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter subject name';
+                  }
+
+                  if (controller.attendanceList
+                      .any((a) => a.subject == value.trim())) {
+                    return "Subject already exists";
                   }
                   return null;
                 },
@@ -73,7 +79,6 @@ class AddSubjectScreen extends StatelessWidget {
                       uid: 'subject_${DateTime.now().millisecondsSinceEpoch}',
                     );
 
-                    final controller = Get.find<AttendanceListController>();
                     controller.addSubject(newSubject);
 
                     Get.back();

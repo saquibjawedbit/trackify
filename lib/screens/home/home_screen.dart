@@ -254,8 +254,8 @@ class HomeScreen extends StatelessWidget {
                                                 padding:
                                                     const EdgeInsets.all(2.0),
                                                 child: Icon(
-                                                  selectedSubjects
-                                                          .contains(subject.uid)
+                                                  selectedSubjects.contains(
+                                                          subject.subject)
                                                       ? Icons.check_circle
                                                       : Icons.circle_outlined,
                                                   color: Colors.blue,
