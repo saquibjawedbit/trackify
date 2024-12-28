@@ -110,6 +110,7 @@ class LogController extends GetxController {
 
   Future<double> getAttendancePercentage(String subjectId) async {
     final stats = await getAttendanceStats(subjectId);
+    // ignore: avoid_types_as_parameter_names
     final total = stats.values.fold(0, (sum, count) => sum + count);
     if (total == 0) return 0;
 

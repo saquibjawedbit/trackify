@@ -16,9 +16,9 @@ class LogModel {
     required this.type,
     this.reason,
     DateTime? date,
-  })  : this.id = id ??
+  })  : id = id ??
             'log_${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}', // Generate if not provided
-        this.date = date ?? DateTime.now();
+        date = date ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
     return {

@@ -59,141 +59,170 @@ class HomeScreen extends StatelessWidget {
                 )),
         ],
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Obx(() {
-              final overallAttendance = _calculateOverallAttendance(
-                  attendanceListController.attendanceList);
-
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Card(
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.blue.shade400,
-                          Colors.green.shade400,
-                        ],
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Overall Attendance',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildStatistic(
-                              'Average',
-                              '${overallAttendance.toStringAsFixed(1)}%',
-                              Icons.timeline,
-                            ),
-                            _buildStatistic(
-                              'Subjects',
-                              attendanceListController.attendanceList.length
-                                  .toString(),
-                              Icons.book,
-                            ),
-                            _buildStatistic(
-                              'Status',
-                              overallAttendance >= 75 ? 'Good' : 'At Risk',
-                              overallAttendance >= 75
-                                  ? Icons.thumb_up
-                                  : Icons.warning,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              onChanged: attendanceListController.updateSearchQuery,
+              decoration: InputDecoration(
+                hintText: 'Search subjects...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              );
-            }),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+            ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16.0),
-            sliver: Obx(() => SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final subject =
-                          attendanceListController.attendanceList[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Obx(() => InkWell(
-                              onLongPress: () {
-                                if (!isSelectionMode.value) {
-                                  isSelectionMode.value = true;
-                                  selectedSubjects.add(subject.uid!);
-                                }
-                              },
-                              onTap: () {
-                                if (isSelectionMode.value) {
-                                  if (selectedSubjects.contains(subject.uid)) {
-                                    selectedSubjects.remove(subject.uid);
-                                    if (selectedSubjects.isEmpty) {
-                                      isSelectionMode.value = false;
-                                    }
-                                  } else {
-                                    selectedSubjects.add(subject.uid!);
-                                  }
-                                } else {
-                                  Get.to(() => AttendanceDetailScreen(
-                                        attendanceModel: subject,
-                                      ));
-                                }
-                              },
-                              child: Stack(
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Obx(() {
+                    final overallAttendance = _calculateOverallAttendance(
+                        attendanceListController.attendanceList);
+
+                    return Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Card(
+                        elevation: 8,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.blue.shade400,
+                                Colors.green.shade400,
+                              ],
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              const Text(
+                                'Overall Attendance',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
                                 children: [
-                                  AttendanceCard(attendance: subject),
-                                  if (isSelectionMode.value)
-                                    Positioned(
-                                      right: 8,
-                                      top: 8,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(2.0),
-                                          child: Icon(
-                                            selectedSubjects
-                                                    .contains(subject.uid)
-                                                ? Icons.check_circle
-                                                : Icons.circle_outlined,
-                                            color: Colors.blue,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                                  _buildStatistic(
+                                    'Average',
+                                    '${overallAttendance.toStringAsFixed(1)}%',
+                                    Icons.timeline,
+                                  ),
+                                  _buildStatistic(
+                                    'Subjects',
+                                    attendanceListController
+                                        .attendanceList.length
+                                        .toString(),
+                                    Icons.book,
+                                  ),
+                                  _buildStatistic(
+                                    'Status',
+                                    overallAttendance >= 75
+                                        ? 'Good'
+                                        : 'At Risk',
+                                    overallAttendance >= 75
+                                        ? Icons.thumb_up
+                                        : Icons.warning,
+                                  ),
                                 ],
                               ),
-                            )),
-                      );
-                    },
-                    childCount: attendanceListController.attendanceList.length,
-                  ),
-                )),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.all(16.0),
+                  sliver: Obx(() => SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final subject = attendanceListController
+                                .filteredAttendanceList[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Obx(() => InkWell(
+                                    onLongPress: () {
+                                      if (!isSelectionMode.value) {
+                                        isSelectionMode.value = true;
+                                        selectedSubjects.add(subject.uid!);
+                                      }
+                                    },
+                                    onTap: () {
+                                      if (isSelectionMode.value) {
+                                        if (selectedSubjects
+                                            .contains(subject.uid)) {
+                                          selectedSubjects.remove(subject.uid);
+                                          if (selectedSubjects.isEmpty) {
+                                            isSelectionMode.value = false;
+                                          }
+                                        } else {
+                                          selectedSubjects.add(subject.uid!);
+                                        }
+                                      } else {
+                                        Get.to(
+                                          () => AttendanceDetailScreen(
+                                            attendanceModel: subject,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Stack(
+                                      children: [
+                                        AttendanceCard(attendance: subject),
+                                        if (isSelectionMode.value)
+                                          Positioned(
+                                            right: 8,
+                                            top: 8,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2.0),
+                                                child: Icon(
+                                                  selectedSubjects
+                                                          .contains(subject.uid)
+                                                      ? Icons.check_circle
+                                                      : Icons.circle_outlined,
+                                                  color: Colors.blue,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  )),
+                            );
+                          },
+                          childCount: attendanceListController
+                              .filteredAttendanceList.length,
+                        ),
+                      )),
+                ),
+              ],
+            ),
           ),
         ],
       ),

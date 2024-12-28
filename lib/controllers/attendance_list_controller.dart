@@ -5,6 +5,7 @@ import '../services/cache_service.dart';
 
 class AttendanceListController extends GetxController {
   final attendanceList = <AttendanceModel>[].obs;
+  final searchQuery = ''.obs;
 
   @override
   void onInit() {
@@ -83,5 +84,18 @@ class AttendanceListController extends GetxController {
     await batch.commit();
 
     attendanceList.refresh();
+  }
+
+  List<AttendanceModel> get filteredAttendanceList {
+    if (searchQuery.isEmpty) return attendanceList;
+    return attendanceList
+        .where((subject) => subject.subject
+            .toLowerCase()
+            .contains(searchQuery.value.toLowerCase()))
+        .toList();
+  }
+
+  void updateSearchQuery(String query) {
+    searchQuery.value = query;
   }
 }
