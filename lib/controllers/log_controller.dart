@@ -168,7 +168,6 @@ class LogController extends GetxController {
 
       final fireStoreLogs =
           snapshot.docs.map((doc) => LogModel.fromMap(doc.data())).toList();
-
       if (fireStoreLogs.isNotEmpty) {
         _logs.value = fireStoreLogs;
         _sortLogs();
