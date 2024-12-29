@@ -1,3 +1,4 @@
+import 'package:f_star/screens/settings/notification_settings_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -47,9 +48,7 @@ class SettingsScreen extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.notifications, color: primaryColor),
             title: const Text('Notifications'),
-            onTap: () {
-              // Handle notification settings
-            },
+            onTap: () => Get.to(() => const NotificationSettingsScreen()),
           ),
           Divider(color: primaryColor),
           ListTile(
