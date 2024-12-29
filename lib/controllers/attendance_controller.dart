@@ -107,13 +107,6 @@ class AttendanceController extends GetxController {
       // Update list controller
       final listController = Get.find<AttendanceListController>();
       await listController.updateAttendance(attendance.value!);
-
-      Get.snackbar(
-        'Success',
-        'Attendance updated successfully',
-        duration: const Duration(seconds: 1),
-        dismissDirection: DismissDirection.horizontal,
-      );
     } catch (e) {
       Get.snackbar(
         'Error',

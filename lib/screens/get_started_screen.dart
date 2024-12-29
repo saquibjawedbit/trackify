@@ -1,11 +1,24 @@
+import 'package:f_star/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class GetStartedScreen extends StatelessWidget {
   const GetStartedScreen({super.key});
 
+  _setNotification() async {
+    // Set notification
+    // Schedule default notification
+    await NotificationService().scheduleAttendanceReminder(
+      hour: 18,
+      minute: 0,
+      title: 'Attendance Reminder',
+      body: 'Don\'t forget to mark your attendance today!',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    _setNotification();
     return Scaffold(
       body: SafeArea(
         child: Padding(

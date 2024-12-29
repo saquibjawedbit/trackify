@@ -55,7 +55,7 @@ class NotificationService {
       'Attendance Reminders',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      icon: 'icon',
     );
 
     const details = NotificationDetails(android: androidDetails);

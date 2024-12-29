@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../premium/premium_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -10,7 +11,7 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _launchEmail() async {
     final Uri emailLaunchUri = Uri(
         scheme: 'mailto',
-        path: 'your.email@example.com', // Replace with your email
+        path: 'simplex.gamestudio@egmail.com', // Replace with your email
         queryParameters: {
           'subject': 'Feature Request',
           'body': 'I would like to request a feature...'
@@ -40,9 +41,7 @@ class SettingsScreen extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.workspace_premium, color: primaryColor),
             title: const Text('Premium'),
-            onTap: () {
-              // Handle premium settings
-            },
+            onTap: () => Get.to(() => const PremiumScreen()),
           ),
           Divider(color: primaryColor),
           ListTile(

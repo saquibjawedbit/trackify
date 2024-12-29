@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'screens/premium/premium_screen.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -27,6 +28,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await dotenv.load(fileName: "./.env");
+
   runApp(const MyApp());
 }
 
@@ -97,6 +99,12 @@ class MyApp extends StatelessWidget {
           name: '/home',
           page: () => const HomeScreen(),
           transition: Transition.fadeIn,
+          transitionDuration: const Duration(milliseconds: 300),
+        ),
+        GetPage(
+          name: '/premium',
+          page: () => const PremiumScreen(),
+          transition: Transition.rightToLeft,
           transitionDuration: const Duration(milliseconds: 300),
         ),
       ],
