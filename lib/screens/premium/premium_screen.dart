@@ -1,8 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/payment_service.dart';
 
-class PremiumScreen extends StatelessWidget {
+class PremiumScreen extends StatefulWidget {
   const PremiumScreen({super.key});
+
+  @override
+  State<PremiumScreen> createState() => _PremiumScreenState();
+}
+
+class _PremiumScreenState extends State<PremiumScreen> {
+  List<Package> _packages = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOfferings();
+  }
+
+  Future<void> _loadOfferings() async {
+    try {
+      final packages = await PaymentService.fetchOffers();
+      setState(() {
+        _packages = packages;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      Get.snackbar(
+        'Error',
+        'Failed to load offers: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
 
   Widget _buildFeatureItem(IconData icon, String text) {
     return Padding(
@@ -25,24 +60,32 @@ class PremiumScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPricingButton({
-    required String title,
-    required String price,
-    required String description,
-    required VoidCallback onPressed,
-    bool isRecommended = false,
-  }) {
+  Widget _buildPricingButton(Package package, {bool isLifetime = false}) {
+    final product = package.storeProduct;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: ElevatedButton(
-        onPressed: onPressed,
+        onPressed: () async {
+          try {
+            await PaymentService.purchasePackage(package);
+            Get.back();
+          } catch (e) {
+            Get.snackbar(
+              'Error',
+              'Purchase failed: $e',
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+            );
+          }
+        },
         style: ElevatedButton.styleFrom(
-          backgroundColor: isRecommended ? Colors.amber : Colors.white24,
-          foregroundColor: isRecommended ? Colors.black : Colors.white,
+          backgroundColor: isLifetime ? Colors.amber : Colors.white24,
+          foregroundColor: isLifetime ? Colors.black : Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: isRecommended
+            side: isLifetime
                 ? const BorderSide(color: Colors.amber, width: 2)
                 : BorderSide.none,
           ),
@@ -54,30 +97,25 @@ class PremiumScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    package.identifier.contains('lifetime')
+                        ? 'Lifetime Access'
+                        : 'Monthly Plan',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: isRecommended ? Colors.black : Colors.white,
+                      color: isLifetime ? Colors.black : Colors.white,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isRecommended ? Colors.black54 : Colors.white70,
-                    ),
-                  ),
                 ],
               ),
             ),
             Text(
-              price,
+              product.priceString,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: isRecommended ? Colors.black : Colors.white,
+                color: isLifetime ? Colors.black : Colors.white,
               ),
             ),
           ],
@@ -86,18 +124,57 @@ class PremiumScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildInfoBar() {
+    final user = FirebaseAuth.instance.currentUser;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.1),
+        border: Border.all(color: Colors.amber),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.amber, size: 24),
+              SizedBox(width: 8),
+              Text(
+                'Important Notice',
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'You are currently signed in as: ${user?.email}\n'
+            'Please make sure to make the purchase with the same Google account '
+            'to avoid any issues with premium access.',
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Premium Features'),
-      ),
+      appBar: AppBar(title: const Text('Premium Features')),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildInfoBar(), // Add info bar at the top
+              // Premium features card
               Card(
                 elevation: 8,
                 shape: RoundedRectangleBorder(
@@ -153,35 +230,23 @@ class PremiumScreen extends StatelessWidget {
                         'Priority Feature Requests\nGet your features implemented first',
                       ),
                       const SizedBox(height: 24),
-                      _buildPricingButton(
-                        title: 'Lifetime Access',
-                        price: '₹99',
-                        description: 'One-time payment, forever access',
-                        onPressed: () {
-                          Get.snackbar(
-                            'Coming Soon',
-                            'Lifetime subscription will be available soon!',
-                            backgroundColor: Colors.amber,
-                            colorText: Colors.black,
-                            dismissDirection: DismissDirection.horizontal,
-                          );
-                        },
-                        isRecommended: true,
-                      ),
-                      _buildPricingButton(
-                        title: 'Monthly',
-                        price: '₹10',
-                        description: 'Billed monthly, cancel anytime',
-                        onPressed: () {
-                          Get.snackbar(
-                            'Coming Soon',
-                            'Monthly subscription will be available soon!',
-                            backgroundColor: Colors.amber,
-                            colorText: Colors.black,
-                            dismissDirection: DismissDirection.horizontal,
-                          );
-                        },
-                      ),
+                      if (_isLoading)
+                        const Center(
+                            child:
+                                CircularProgressIndicator(color: Colors.white))
+                      else if (_packages.isEmpty)
+                        const Center(
+                          child: Text(
+                            'No offers available',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        )
+                      else
+                        ..._packages.map((package) => _buildPricingButton(
+                              package,
+                              isLifetime:
+                                  package.identifier.contains('lifetime'),
+                            )),
                     ],
                   ),
                 ),

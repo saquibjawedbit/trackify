@@ -8,6 +8,7 @@ import '../../controllers/attendance_list_controller.dart';
 import '../../components/attendance_card.dart';
 import '../../models/attendance_model.dart';
 import '../subject/add_subject_screen.dart';
+import '../../controllers/premium_controller.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -15,13 +16,14 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final attendanceListController = Get.put(AttendanceListController());
+    final premiumController = Get.put(PremiumController());
     Get.put(LogController());
     final isSelectionMode = false.obs;
     final selectedSubjects = <String>{}.obs;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('F* Attendance Tracker'),
+        title: const Text('Trackify'),
         actions: [
           Obx(() => isSelectionMode.value
               ? Row(
@@ -153,7 +155,9 @@ class HomeScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: GestureDetector(
                       onTap: () {
-                        Get.to(() => const ChatWithAiScreen());
+                        premiumController.requirePremium(() {
+                          Get.to(() => const ChatWithAiScreen());
+                        });
                       },
                       child: Card(
                         elevation: 8,
@@ -278,10 +282,35 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.to(() => AddSubjectScreen()),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: Obx(() {
+        // final subjectCount = attendanceListController.attendanceList.length;
+        final canAdd = attendanceListController.canAddMoreSubjects();
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!canAdd)
+              Container(
+                padding: const EdgeInsets.all(8),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Subject limit reached',
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
+            FloatingActionButton(
+              onPressed: canAdd
+                  ? () => Get.to(() => AddSubjectScreen())
+                  : () => Get.toNamed('/premium'),
+              child: Icon(canAdd ? Icons.add : Icons.workspace_premium),
+            ),
+          ],
+        );
+      }),
     );
   }
 

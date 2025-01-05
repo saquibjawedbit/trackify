@@ -4,6 +4,7 @@ import 'package:f_star/screens/authentication/login_screen.dart';
 import 'package:f_star/screens/authentication/signup_screen.dart';
 import 'package:f_star/screens/get_started_screen.dart';
 import 'package:f_star/screens/home/home_screen.dart';
+import 'package:f_star/services/payment_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -11,12 +12,17 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/premium/premium_screen.dart';
+import 'controllers/premium_controller.dart';
 
 class InitialBinding extends Bindings {
   @override
   void dependencies() {
     Get.put<AuthenticationController>(
       AuthenticationController(),
+      permanent: true,
+    );
+    Get.put<PremiumController>(
+      PremiumController(),
       permanent: true,
     );
   }
@@ -28,7 +34,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await dotenv.load(fileName: "./.env");
-
+  await PaymentService.init();
   runApp(const MyApp());
 }
 
@@ -66,8 +72,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'F* Attendance Tracker',
+      title: 'Trackify',
       initialBinding: InitialBinding(),
+      debugShowCheckedModeBanner: false,
       home: const AuthWrapper(),
       defaultTransition: Transition.fade,
       getPages: [

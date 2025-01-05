@@ -63,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          "Log in to F* - The Attendence Tracker",
+                          "Log in to Trackify - The Attendence Tracker",
                           style: Theme.of(context).textTheme.titleMedium,
                           textAlign: TextAlign.center,
                         ),

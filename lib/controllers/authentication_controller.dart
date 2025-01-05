@@ -1,6 +1,8 @@
+import 'package:f_star/services/payment_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class AuthenticationController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -36,7 +38,7 @@ class AuthenticationController extends GetxController {
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
-
+      await PaymentService.init();
       Get.offAllNamed('/home');
     } on FirebaseAuthException catch (e) {
       String message = 'An error occurred';
@@ -83,15 +85,17 @@ class AuthenticationController extends GetxController {
         email: email,
         password: password,
       );
+      await PaymentService.init();
       Get.offAllNamed('/home');
     } on FirebaseAuthException catch (e) {
       String message = 'An error occurred';
+      debugPrint(e.code);
       switch (e.code) {
         case 'user-not-found':
           message = 'No user found with this email';
           break;
-        case 'wrong-password':
-          message = 'Wrong password';
+        case 'invalid-credential':
+          message = 'Wrong password or email';
           break;
         case 'invalid-email':
           message = 'Invalid email address';

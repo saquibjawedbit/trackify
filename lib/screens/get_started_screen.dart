@@ -35,7 +35,7 @@ class GetStartedScreen extends StatelessWidget {
                 fit: BoxFit.fitWidth,
               ),
               Text(
-                "Welcome to F*",
+                "Welcome to Trackify",
                 style: Theme.of(context).textTheme.titleMedium,
                 textAlign: TextAlign.center,
               ),

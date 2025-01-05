@@ -47,6 +47,7 @@ dependencies:
   flutter_dotenv: ^5.2.1
   url_launcher: ^6.3.1
   flutter_local_notifications: ^18.0.1
+  purchases_flutter: ^8.4.0
 
 
 dev_dependencies:
