@@ -163,6 +163,79 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
+  Widget _buildSubscriptionTerms() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade900,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade800),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Subscription Terms',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildTermItem('Free Version Limitations',
+              '• Limited to 7 subjects\n• Basic features only'),
+          _buildTermItem('Monthly Subscription',
+              '• ₹10/month\n• Auto-renews monthly\n• Cancel anytime\n• Full access to all features'),
+          _buildTermItem('Lifetime Access',
+              '• One-time payment of ₹99\n• Never expires\n• Full access to all features'),
+          _buildTermItem('Premium Features',
+              '• Unlimited subjects\n• AI-powered assistance\n• Cloud sync\n• Priority support'),
+          const Divider(color: Colors.grey),
+          const Text(
+            'Important Information:',
+            style: TextStyle(
+              color: Colors.amber,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '• Payment will be charged to your Google Play account\n'
+            '• Subscription automatically renews unless auto-renew is turned off\n'
+            '• Account will be charged for renewal within 24-hours prior to the end of the current period\n'
+            '• You can manage your subscriptions in Google Play Store settings',
+            style: TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTermItem(String title, String content) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            content,
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -251,6 +324,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   ),
                 ),
               ),
+              _buildSubscriptionTerms(), // Add subscription terms
             ],
           ),
         ),

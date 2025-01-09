@@ -1,5 +1,4 @@
 import 'package:f_star/services/payment_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 
 class PremiumController extends GetxController {
@@ -14,12 +13,7 @@ class PremiumController extends GetxController {
 
   Future<void> checkPremiumStatus() async {
     try {
-      String email = FirebaseAuth.instance.currentUser!.email!;
-      if (email == 'saquibjawed4444@gmail.com') {
-        _isPremium.value = true;
-      } else {
-        _isPremium.value = PaymentService.isPremium;
-      }
+      _isPremium.value = PaymentService.isPremium;
     } catch (e) {
       _isPremium.value = false;
     }

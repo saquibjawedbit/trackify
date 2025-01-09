@@ -89,7 +89,7 @@ class AuthenticationController extends GetxController {
       Get.offAllNamed('/home');
     } on FirebaseAuthException catch (e) {
       String message = 'An error occurred';
-      debugPrint(e.code);
+      debugPrint(e.toString());
       switch (e.code) {
         case 'user-not-found':
           message = 'No user found with this email';

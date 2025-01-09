@@ -23,16 +23,6 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  void _handleDelete() async {
-    // Delete user account
-    try {
-      await FirebaseAuth.instance.currentUser!.delete();
-      Get.offAllNamed('/login');
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to delete account: $e');
-    }
-  }
-
   void _handleDeleteAllRecords() async {
     final controller = Get.find<AttendanceListController>();
 
