@@ -12,11 +12,16 @@ Trackify is a next-generation AI-powered attendance tracker built with **Gemini*
 - **Customizable Groups**: Manage attendance for classes, teams, or departments effortlessly.  
 - **Insights & Reporting**: Generate detailed attendance reports in PDF or Excel formats.
 
-![Home Screen](assets/01.png)
-![Attendance Report](assets/02.png)
-![NLQ](assets/03.png)
-![Screens](assets/04.png)
-![Screens](assets/05.png)
+## Screenshots  
+
+<div style="display: flex; flex-wrap: nowrap; gap: 10px;">
+  <img src="assets/01.png" alt="Home Screen" width="200" />
+  <img src="assets/02.png" alt="Attendance Report" width="200" />
+  <img src="assets/03.png" alt="NLQ" width="200" />
+  <img src="assets/04.png" alt="Screens" width="200" />
+  <img src="assets/05.png" alt="Screens" width="200" />
+</div>
+
 
 ## Tech Stack  
 
@@ -30,4 +35,9 @@ Trackify is a next-generation AI-powered attendance tracker built with **Gemini*
 1. Clone the repository:  
    ```bash  
    git clone https://github.com/saquibjawedbit/trackify.git  
-   cd trackify  
+   cd trackify
+   ```
+2. Install dependencies:  
+   ```bash
+   flutter pub get
+   ```
