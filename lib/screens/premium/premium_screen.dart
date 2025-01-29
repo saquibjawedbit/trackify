@@ -186,10 +186,16 @@ class _PremiumScreenState extends State<PremiumScreen> {
           const SizedBox(height: 16),
           _buildTermItem('Free Version Limitations',
               '• Limited to 7 subjects\n• Basic features only'),
-          _buildTermItem('Monthly Subscription',
-              '• ₹10/month\n• Auto-renews monthly\n• Cancel anytime\n• Full access to all features'),
-          _buildTermItem('Lifetime Access',
-              '• One-time payment of ₹99\n• Never expires\n• Full access to all features'),
+          _buildTermItem(
+              'Monthly Subscription',
+              _packages.isNotEmpty
+                  ? '• ${_packages.firstWhere((p) => !p.identifier.contains('lifetime')).storeProduct.priceString}/month\n• Auto-renews monthly\n• Cancel anytime\n• Full access to all features'
+                  : '• Loading...\n• Auto-renews monthly\n• Cancel anytime\n• Full access to all features'),
+          _buildTermItem(
+              'Lifetime Access',
+              _packages.isNotEmpty
+                  ? '• One-time payment of ${_packages.firstWhere((p) => p.identifier.contains('lifetime')).storeProduct.priceString}\n• Never expires\n• Full access to all features'
+                  : '• Loading...\n• Never expires\n• Full access to all features'),
           _buildTermItem('Premium Features',
               '• Unlimited subjects\n• AI-powered assistance\n• Cloud sync\n• Priority support'),
           const Divider(color: Colors.grey),
