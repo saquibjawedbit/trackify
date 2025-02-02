@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/payment_service.dart';
 
@@ -12,7 +12,7 @@ class PremiumScreen extends StatefulWidget {
 }
 
 class _PremiumScreenState extends State<PremiumScreen> {
-  List<Package> _packages = [];
+  List<ProductDetails> _products = [];
   bool _isLoading = true;
 
   @override
@@ -23,12 +23,14 @@ class _PremiumScreenState extends State<PremiumScreen> {
 
   Future<void> _loadOfferings() async {
     try {
-      final packages = await PaymentService.fetchOffers();
+      final products = await PaymentService.fetchOffers();
+      print('Fetched products: $products'); // Debugging
       setState(() {
-        _packages = packages;
+        _products = products;
         _isLoading = false;
       });
     } catch (e) {
+      print('Error fetching offers: $e'); // Debugging
       setState(() => _isLoading = false);
       Get.snackbar(
         'Error',
@@ -38,6 +40,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
       );
     }
   }
+
 
   Widget _buildFeatureItem(IconData icon, String text) {
     return Padding(
@@ -60,15 +63,14 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
-  Widget _buildPricingButton(Package package, {bool isLifetime = false}) {
-    final product = package.storeProduct;
-
+  Widget _buildPricingButton(ProductDetails product,
+      {bool isLifetime = false}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: ElevatedButton(
         onPressed: () async {
           try {
-            await PaymentService.purchasePackage(package);
+            await PaymentService.purchaseProduct(product);
             Get.back();
           } catch (e) {
             Get.snackbar(
@@ -97,7 +99,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    package.identifier.contains('lifetime')
+                    product.id.contains('lifetime')
                         ? 'Lifetime Access'
                         : 'Monthly Plan',
                     style: TextStyle(
@@ -106,12 +108,11 @@ class _PremiumScreenState extends State<PremiumScreen> {
                       color: isLifetime ? Colors.black : Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 4),
                 ],
               ),
             ),
             Text(
-              product.priceString,
+              product.price,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -164,6 +165,16 @@ class _PremiumScreenState extends State<PremiumScreen> {
   }
 
   Widget _buildSubscriptionTerms() {
+    String monthlyPrice = _products.isNotEmpty &&
+        _products.any((p) => !p.id.contains('lifetime'))
+        ? _products.firstWhere((p) => !p.id.contains('lifetime')).price
+        : 'Loading...';
+
+    String lifetimePrice = _products.isNotEmpty &&
+        _products.any((p) => p.id.contains('lifetime'))
+        ? _products.firstWhere((p) => p.id.contains('lifetime')).price
+        : 'Loading...';
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 16),
       padding: const EdgeInsets.all(16),
@@ -186,16 +197,10 @@ class _PremiumScreenState extends State<PremiumScreen> {
           const SizedBox(height: 16),
           _buildTermItem('Free Version Limitations',
               '• Limited to 7 subjects\n• Basic features only'),
-          _buildTermItem(
-              'Monthly Subscription',
-              _packages.isNotEmpty
-                  ? '• ${_packages.firstWhere((p) => !p.identifier.contains('lifetime')).storeProduct.priceString}/month\n• Auto-renews monthly\n• Cancel anytime\n• Full access to all features'
-                  : '• Loading...\n• Auto-renews monthly\n• Cancel anytime\n• Full access to all features'),
-          _buildTermItem(
-              'Lifetime Access',
-              _packages.isNotEmpty
-                  ? '• One-time payment of ${_packages.firstWhere((p) => p.identifier.contains('lifetime')).storeProduct.priceString}\n• Never expires\n• Full access to all features'
-                  : '• Loading...\n• Never expires\n• Full access to all features'),
+          _buildTermItem('Monthly Subscription',
+              '• $monthlyPrice/month\n• Auto-renews monthly\n• Cancel anytime\n• Full access to all features'),
+          _buildTermItem('Lifetime Access',
+              '• One-time payment of $lifetimePrice\n• Never expires\n• Full access to all features'),
           _buildTermItem('Premium Features',
               '• Unlimited subjects\n• AI-powered assistance\n• Cloud sync\n• Priority support'),
           const Divider(color: Colors.grey),
@@ -209,15 +214,16 @@ class _PremiumScreenState extends State<PremiumScreen> {
           const SizedBox(height: 8),
           const Text(
             '• Payment will be charged to your Google Play account\n'
-            '• Subscription automatically renews unless auto-renew is turned off\n'
-            '• Account will be charged for renewal within 24-hours prior to the end of the current period\n'
-            '• You can manage your subscriptions in Google Play Store settings',
+                '• Subscription automatically renews unless auto-renew is turned off\n'
+                '• Account will be charged for renewal within 24-hours prior to the end of the current period\n'
+                '• You can manage your subscriptions in Google Play Store settings',
             style: TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
       ),
     );
   }
+
 
   Widget _buildTermItem(String title, String content) {
     return Padding(
@@ -313,7 +319,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         const Center(
                             child:
                                 CircularProgressIndicator(color: Colors.white))
-                      else if (_packages.isEmpty)
+                      else if (_products.isEmpty)
                         const Center(
                           child: Text(
                             'No offers available',
@@ -321,10 +327,9 @@ class _PremiumScreenState extends State<PremiumScreen> {
                           ),
                         )
                       else
-                        ..._packages.map((package) => _buildPricingButton(
+                        ..._products.map((package) => _buildPricingButton(
                               package,
-                              isLifetime:
-                                  package.identifier.contains('lifetime'),
+                              isLifetime: package.id.contains('lifetime'),
                             )),
                     ],
                   ),
