@@ -1,52 +1,40 @@
-import 'package:f_star/controllers/premium_controller.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PaymentService {
-  static final _apiKey = dotenv.env['APP_PURCHASE_API_KEY'];
+  static final InAppPurchase _iap = InAppPurchase.instance;
   static bool isPremium = false;
+  static List<ProductDetails> _products = [];
+  static Stream<List<PurchaseDetails>>? _purchaseStream;
 
+  /// Initialize the payment service
   static Future<void> init() async {
-    await Purchases.setLogLevel(LogLevel.debug);
-    String uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-    PurchasesConfiguration configuration = PurchasesConfiguration(_apiKey!);
+    await checkPremiumStatus(); // Check if premium is already unlocked
 
-    configuration.appUserID = uid;
+    _purchaseStream = _iap.purchaseStream;
+    _listenToPurchases();
 
-    await Purchases.configure(configuration);
-
-    try {
-      CustomerInfo customerInfo = await Purchases.getCustomerInfo();
-      // print('CustomerInfo: ${customerInfo}');
-      isPremium = customerInfo.entitlements.active.isNotEmpty;
-      debugPrint('CustomerInfo: ${customerInfo}');
-    } catch (e) {
-      debugPrint('Error fetching customer info: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to load premium status',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+    bool available = await _iap.isAvailable();
+    if (!available) {
+      debugPrint("In-App Purchase is not available");
+      return;
     }
+
+    await fetchOffers();
   }
 
-  static Future<List<Package>> fetchOffers() async {
-    try {
-      final offerings = await Purchases.getOfferings();
-      final current = offerings.current;
+  /// Fetch available product offers
+  static Future<List<ProductDetails>> fetchOffers() async {
+    const Set<String> _kProductIds = {'prem_99_lifetime'};
+    final ProductDetailsResponse response =
+        await _iap.queryProductDetails(_kProductIds);
 
-      if (current == null) {
-        debugPrint('No offerings available');
-        return [];
-      }
-
-      return current.availablePackages;
-    } catch (e) {
-      debugPrint('Error fetching offers: $e');
+    if (response.error != null || response.notFoundIDs.isNotEmpty) {
+      debugPrint("Error fetching offers: ${response.error}");
       Get.snackbar(
         'Error',
         'Failed to load premium offers',
@@ -55,18 +43,20 @@ class PaymentService {
       );
       return [];
     }
+
+    _products = response.productDetails;
+    return _products;
   }
 
-  static Future<bool> purchasePackage(Package package) async {
+  /// Purchase a product
+  static Future<bool> purchaseProduct(ProductDetails product) async {
+    final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
+
     try {
-      CustomerInfo customerInfo = await Purchases.purchasePackage(package);
-      final premium = customerInfo.entitlements.active.isNotEmpty;
-      isPremium = premium;
-      final PremiumController controller = Get.find();
-      controller.checkPremiumStatus();
-      return isPremium;
+      _iap.buyNonConsumable(purchaseParam: purchaseParam);
+      return true;
     } catch (e) {
-      debugPrint('Error purchasing package: $e');
+      debugPrint("Error purchasing product: $e");
       Get.snackbar(
         'Error',
         'Purchase failed: $e',
@@ -75,5 +65,55 @@ class PaymentService {
       );
       return false;
     }
+  }
+
+  /// Listen for purchase updates
+  static void _listenToPurchases() {
+    _iap.purchaseStream.listen((List<PurchaseDetails> purchaseDetailsList) {
+      for (var purchase in purchaseDetailsList) {
+        debugPrint("Purchase detected: ${purchase.status}");
+
+        if (purchase.status == PurchaseStatus.purchased ||
+            purchase.status == PurchaseStatus.restored) {
+          _verifyPurchase(purchase);
+        } else if (purchase.status == PurchaseStatus.error) {
+          debugPrint("Purchase error: ${purchase.error?.message}");
+        }
+      }
+    }, onError: (error) {
+      debugPrint("Error in purchase stream: $error");
+    });
+  }
+
+  /// Verify and complete the purchase
+  static Future<void> _verifyPurchase(PurchaseDetails purchase) async {
+    if (purchase.pendingCompletePurchase) {
+      await _iap.completePurchase(purchase);
+    }
+
+    if (purchase.status == PurchaseStatus.purchased ||
+        purchase.status == PurchaseStatus.restored) {
+      isPremium = true;
+
+      // Persist the premium status
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isPremium', true);
+
+      debugPrint("Premium unlocked successfully!");
+    }
+  }
+
+  /// Check if the user is already premium (persisted data)
+  static Future<void> checkPremiumStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    isPremium = prefs.getBool('isPremium') ?? false;
+
+    debugPrint("Checked premium status: $isPremium");
+  }
+
+  /// Restore purchases for users who reinstall the app
+  static Future<void> restorePurchases() async {
+    await _iap.restorePurchases();
+    debugPrint("Restoring purchases...");
   }
 }

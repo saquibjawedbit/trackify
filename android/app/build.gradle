@@ -17,7 +17,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace 'com.example.f_star'
-    compileSdk flutter.compileSdkVersion
+    compileSdk 34
     ndkVersion flutter.ndkVersion
 
     defaultConfig {
@@ -25,7 +25,7 @@ android {
         applicationId 'com.saquib.trackify'
         minSdk 23
         targetSdk flutter.targetSdkVersion
-        versionCode 6
+        versionCode 7
         versionName flutter.versionName
     }
 
@@ -40,13 +40,14 @@ android {
     }
 
     signingConfigs {
-        release {
-            keyAlias = keystoreProperties['keyAlias']
-            keyPassword = keystoreProperties['keyPassword']
-            storeFile = keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-            storePassword = keystoreProperties['storePassword']
-        }
+    release {
+        keyAlias keystoreProperties['keyAlias']
+        keyPassword keystoreProperties['keyPassword']
+        storeFile file(keystoreProperties['storeFile'])
+        storePassword keystoreProperties['storePassword']
     }
+}
+
 
     buildTypes {
         release {

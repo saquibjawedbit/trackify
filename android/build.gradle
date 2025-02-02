@@ -1,15 +1,28 @@
-allprojects {
+buildscript {
     repositories {
         google()
         mavenCentral()
     }
+    dependencies {
+        // Use AGP 7.3.0 or 7.4.0 for compatibility with Flutter 3.27.3
+        classpath 'com.android.tools.build:gradle:8.2.0'
+        // Or try 7.4.0
+        classpath 'com.google.gms:google-services:4.3.15' // Make sure this is up-to-date
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()  // Optional but helpful for some dependencies
+    }
 }
 
 rootProject.buildDir = "../build"
+
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
     project.evaluationDependsOn(":app")
 }
 
