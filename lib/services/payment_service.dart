@@ -25,11 +25,12 @@ class PaymentService {
     }
 
     await fetchOffers();
+    await restorePurchases();
   }
 
   /// Fetch available product offers
   static Future<List<ProductDetails>> fetchOffers() async {
-    const Set<String> _kProductIds = {'prem_99_lifetime'};
+    const Set<String> _kProductIds = {'prem_10_1m', 'prem_99_lifetime'};
     final ProductDetailsResponse response =
         await _iap.queryProductDetails(_kProductIds);
 
@@ -113,7 +114,10 @@ class PaymentService {
 
   /// Restore purchases for users who reinstall the app
   static Future<void> restorePurchases() async {
-    await _iap.restorePurchases();
-    debugPrint("Restoring purchases...");
+    try {
+      await _iap.restorePurchases();
+    } catch (e) {
+      debugPrint("Error restoring purchases: $e");
+    }
   }
 }
