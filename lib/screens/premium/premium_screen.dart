@@ -41,7 +41,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
     }
   }
 
-
   Widget _buildFeatureItem(IconData icon, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -165,15 +164,15 @@ class _PremiumScreenState extends State<PremiumScreen> {
   }
 
   Widget _buildSubscriptionTerms() {
-    String monthlyPrice = _products.isNotEmpty &&
-        _products.any((p) => !p.id.contains('lifetime'))
-        ? _products.firstWhere((p) => !p.id.contains('lifetime')).price
-        : 'Loading...';
+    String monthlyPrice =
+        _products.isNotEmpty && _products.any((p) => !p.id.contains('lifetime'))
+            ? _products.firstWhere((p) => !p.id.contains('lifetime')).price
+            : 'Loading...';
 
-    String lifetimePrice = _products.isNotEmpty &&
-        _products.any((p) => p.id.contains('lifetime'))
-        ? _products.firstWhere((p) => p.id.contains('lifetime')).price
-        : 'Loading...';
+    String lifetimePrice =
+        _products.isNotEmpty && _products.any((p) => p.id.contains('lifetime'))
+            ? _products.firstWhere((p) => p.id.contains('lifetime')).price
+            : 'Loading...';
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 16),
@@ -214,16 +213,15 @@ class _PremiumScreenState extends State<PremiumScreen> {
           const SizedBox(height: 8),
           const Text(
             '• Payment will be charged to your Google Play account\n'
-                '• Subscription automatically renews unless auto-renew is turned off\n'
-                '• Account will be charged for renewal within 24-hours prior to the end of the current period\n'
-                '• You can manage your subscriptions in Google Play Store settings',
+            '• Subscription automatically renews unless auto-renew is turned off\n'
+            '• Account will be charged for renewal within 24-hours prior to the end of the current period\n'
+            '• You can manage your subscriptions in Google Play Store settings',
             style: TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
       ),
     );
   }
-
 
   Widget _buildTermItem(String title, String content) {
     return Padding(

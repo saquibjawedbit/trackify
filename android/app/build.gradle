@@ -25,7 +25,7 @@ android {
         applicationId 'com.saquib.trackify'
         minSdk 23
         targetSdk flutter.targetSdkVersion
-        versionCode 7
+        versionCode 11
         versionName flutter.versionName
     }
 
